@@ -12,6 +12,13 @@ onclick="pycmd(Browser search:query')"
 ```
 .
 
+### Previewer
+If any bridge receive a message starting by "Previewer:" followed by a `query`, it will open the previewer and show the result of the `query` (as in the browser). You can send this message from any field by adding
+```html
+onclick="pycmd(Previewer:query')"
+```
+.
+
 
 ## Version 2.0
 None
