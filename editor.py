@@ -1,13 +1,13 @@
 import json
 import os
 
-from aqt import mw
 from anki.hooks import addHook
+from aqt import mw
 from aqt.editor import Editor
 from aqt.qt import QDialog, QKeySequence, Qt
 
-from .config import getUserOption, setUserOption
 from . import link
+from .config import getUserOption, setUserOption
 
 addon_path = os.path.dirname(__file__)
 
@@ -30,7 +30,29 @@ def create_link(editor):
         {"Note": 0, "Card": 1, "Query": 2}.get(getUserOption("Last search type", "Note"), 0))
 
     # query
-    form.line_search.setText(getUserOption("Last query", ""))
+    def default() -> str:
+        search_type = ["Note", "Card",
+                       "Query"][form.combo_search_type.currentIndex()]
+        if search_type == "Note":
+            if editor.note:
+                return str(editor.note.id)
+        elif search_type == "Card":
+            if editor.card:
+                return str(editor.card.id)
+            elif editor.note:
+                cards = editor.note.cards()
+                if cards:
+                    return str(cards[0].id)
+        else:
+            return getUserOption("Last query", "")
+        return ""
+
+    def set_default() -> None:
+        form.line_search.setText(default())
+
+    set_default()
+
+    form.button_current.clicked.connect(set_default)
 
     ##
     dialog.exec()

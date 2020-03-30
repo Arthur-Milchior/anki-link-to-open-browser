@@ -75,13 +75,6 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
-        <widget class="QLineEdit" name="line_search">
-         <property name="text">
-          <string>ID or Query</string>
-         </property>
-        </widget>
-       </item>
        <item row="3" column="1">
         <widget class="QComboBox" name="combo_search_type">
          <item>
@@ -99,6 +92,20 @@
            <string>Search query</string>
           </property>
          </item>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLineEdit" name="line_search">
+         <property name="text">
+          <string>ID or Query</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QPushButton" name="button_current">
+         <property name="text">
+          <string>Current</string>
+         </property>
         </widget>
        </item>
       </layout>

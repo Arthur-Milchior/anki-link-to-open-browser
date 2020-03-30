@@ -7,16 +7,8 @@ from typing import Any, List, Optional, Union
 from anki.cards import Card
 from anki.lang import _
 from aqt import AnkiQt, gui_hooks
-from aqt.qt import (
-    QAbstractItemView,
-    QCheckBox,
-    QDialog,
-    QDialogButtonBox,
-    QKeySequence,
-    Qt,
-    QVBoxLayout,
-    QWidget,
-)
+from aqt.qt import (QAbstractItemView, QCheckBox, QDialog, QDialogButtonBox,
+                    QKeySequence, Qt, QVBoxLayout, QWidget)
 from aqt.sound import av_player, play_clicked_audio
 from aqt.theme import theme_manager
 from aqt.utils import restoreGeom, saveGeom
