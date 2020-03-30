@@ -14,9 +14,9 @@ def on_bridge_browser(handled, cmd, context):
         return
     elif len(cards) == 1:
         card = cards[0]
-        previewer = PreviewerSingleCard(context, mw, card)
+        previewer = PreviewerSingleCard(card, context, mw)
     else:
-        previewer = PreviewerListCards(context, mw, cards)
+        previewer = PreviewerListCards(cards, context, mw)
     previewer._openPreview()
     return (True, None)
 

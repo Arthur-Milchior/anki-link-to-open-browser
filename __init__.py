@@ -1,1 +1,1 @@
-from . import browser, previewer
+from . import browser, editor, previewer

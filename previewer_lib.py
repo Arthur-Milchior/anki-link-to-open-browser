@@ -7,8 +7,16 @@ from typing import Any, List, Optional, Union
 from anki.cards import Card
 from anki.lang import _
 from aqt import AnkiQt, gui_hooks
-from aqt.qt import (QAbstractItemView, QCheckBox, QDialog, QDialogButtonBox,
-                    QKeySequence, Qt, QVBoxLayout, QWidget)
+from aqt.qt import (
+    QAbstractItemView,
+    QCheckBox,
+    QDialog,
+    QDialogButtonBox,
+    QKeySequence,
+    Qt,
+    QVBoxLayout,
+    QWidget,
+)
 from aqt.sound import av_player, play_clicked_audio
 from aqt.theme import theme_manager
 from aqt.utils import restoreGeom, saveGeom
@@ -27,10 +35,12 @@ class Previewer:
     _lastPreviewRender: Union[int, float] = 0
     _previewTimer = None
 
-    def __init__(self, parent: QWidget, mw: AnkiQt, card: Optional[Card] = None):
+    def __init__(self, parent: QWidget, mw: AnkiQt):
         self.parent = parent
         self.mw = mw
-        self.card = card
+
+    def card(self) -> Optional[Card]:
+        raise NotImplementedError
 
     def _openPreview(self):
         self._previewState = "question"
@@ -111,7 +121,7 @@ class Previewer:
 
     def _on_preview_bridge_cmd(self, cmd: str) -> Any:
         if cmd.startswith("play:"):
-            play_clicked_audio(cmd, self.card)
+            play_clicked_audio(cmd, self.card())
 
     def _renderPreview(self, cardChanged=False):
         self._cancelPreviewTimer()
@@ -139,7 +149,7 @@ class Previewer:
 
         if not self._previewWindow:
             return
-        c = self.card
+        c = self.card()
         func = "_showQuestion"
         if not c:
             txt = _("(please select 1 card)")
@@ -201,13 +211,17 @@ class Previewer:
         self._renderPreview()
 
     def _previewStateAndMod(self):
-        c = self.card
+        c = self.card()
         n = c.note()
         n.load()
         return (self._previewState, c.id, n.mod)
 
 
 class PreviewerMultipleCards(Previewer):
+    def card(self) -> Optional[Card]:
+        # need to state explicitly it's not implement to avoid W0223
+        raise NotImplementedError
+
     def _create_gui(self):
         super()._create_gui()
         self._previewPrev = self.bbox.addButton(
@@ -248,13 +262,13 @@ class PreviewerMultipleCards(Previewer):
     def _updatePreviewButtons(self):
         if not self._previewWindow:
             return
-        self._previewPrev.setEnabled(self._enablePrev())
-        self._previewNext.setEnabled(self._enableNext())
+        self._previewPrev.setEnabled(self._should_enable_prev())
+        self._previewNext.setEnabled(self._should_enable_next())
 
-    def _enablePrev(self):
+    def _should_enable_prev(self):
         return self._previewState == "answer" and not self._previewBothSides
 
-    def _enableNext(self):
+    def _should_enable_next(self):
         return self._previewState == "question"
 
     def _onClosePreview(self):
@@ -264,6 +278,12 @@ class PreviewerMultipleCards(Previewer):
 
 
 class PreviewerBrowser(PreviewerMultipleCards):
+    def card(self) -> Optional[Card]:
+        if self.parent.singleCard:
+            return self.parent.card
+        else:
+            return None
+
     def _onPreviewFinished(self, ok):
         super()._onPreviewFinished(ok)
         self.parent.form.previewButton.setChecked(False)
@@ -278,12 +298,12 @@ class PreviewerBrowser(PreviewerMultipleCards):
             lambda: self.parent._moveCur(QAbstractItemView.MoveDown)
         )
 
-    def _enablePrev(self):
-        return super()._enablePrev() or self.parent.currentRow() > 0
+    def _should_enable_prev(self):
+        return super()._should_enable_prev() or self.parent.currentRow() > 0
 
-    def _enableNext(self):
+    def _should_enable_next(self):
         return (
-            super()._enableNext()
+            super()._should_enable_next()
             or self.parent.currentRow() < self.parent.model.rowCount(None) - 1
         )
 
@@ -292,19 +312,31 @@ class PreviewerBrowser(PreviewerMultipleCards):
         self.parent.previewer = None
 
     def _renderScheduledPreview(self) -> None:
-        if self.parent.singleCard:
-            self.card = self.parent.card
-        else:
-            self.card = None
         super()._renderScheduledPreview()
         self._updatePreviewButtons()
 
 
 class PreviewerListCards(PreviewerMultipleCards):
-    def __init__(self, parent: QWidget, mw: AnkiQt, cards: List[Card] = None):
-        super().__init__(parent, mw, cards[0] if cards else None)
-        self.cards = cards
+    def __init__(self, cards: List[Union[Card, int]], *args, **kwargs):
+        """A previewer displaying a list of card.
+
+        List can be changed by setting self.cards to a new value.
+
+        self.cards contains both cid and card. So that card is loaded
+        only when required and is not loaded twice.
+
+        """
         self.index = 0
+        self.cards = cards
+        super().__init__(*args, **kwargs)
+
+    def card(self):
+        if not self.cards:
+            return None
+        if isinstance(self.cards[self.index], int):
+            self.cards[self.index] = self.mw.col.getCard(
+                self.cards[self.index])
+        return self.cards[self.index]
 
     def _openPreview(self):
         if not self.cards:
@@ -313,15 +345,17 @@ class PreviewerListCards(PreviewerMultipleCards):
 
     def _onPreviewPrevCard(self):
         self.index -= 1
+        self._renderPreview()
 
     def _onPreviewNextCard(self):
         self.index += 1
+        self._renderPreview()
 
-    def _enablePrev(self):
-        return super()._enablePrev() or self.index > 0
+    def _should_enable_prev(self):
+        return super()._should_enable_prev() or self.index > 0
 
-    def _enableNext(self):
-        return super()._enableNext() or self.index < len(self.cards) - 1
+    def _should_enable_next(self):
+        return super()._should_enable_next() or self.index < len(self.cards) - 1
 
     def _on_other_side(self):
         if self._previewState == "question":
@@ -332,6 +366,13 @@ class PreviewerListCards(PreviewerMultipleCards):
 
 
 class PreviewerSingleCard(Previewer):
+    def __init__(self, card: Card, *args, **kwargs):
+        self._card = card
+        super().__init__(*args, **kwargs)
+
+    def card(self) -> Card:
+        return self._card
+
     def _create_gui(self):
         super()._create_gui()
         self._other_side = self.bbox.addButton(
