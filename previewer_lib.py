@@ -67,7 +67,7 @@ class Previewer:
         self.previewShowBothSides.setToolTip(_("Shortcut key: %s" % "B"))
         self.bbox.addButton(self.previewShowBothSides,
                             QDialogButtonBox.ActionRole)
-        self._previewBothSides = self.mw.col.conf.get(
+        self._previewBothSides = self.mw.col.get_config(
             "previewBothSides", False)
         self.previewShowBothSides.setChecked(self._previewBothSides)
         self.previewShowBothSides.toggled.connect(self._onPreviewShowBothSides)
@@ -196,7 +196,7 @@ class Previewer:
 
     def _onPreviewShowBothSides(self, toggle):
         self._previewBothSides = toggle
-        self.mw.col.conf["previewBothSides"] = toggle
+        self.mw.col.set_config("previewBothSides", toggle)
         self.mw.col.setMod()
         if self._previewState == "answer" and not toggle:
             self._previewState = "question"
