@@ -1,23 +1,20 @@
 from aqt import gui_hooks, mw
 
-from .previewer_lib import PreviewerListCards, PreviewerSingleCard
+from .previewer_lib import CardPreviewer
 
 
 def on_bridge_browser(handled, cmd, context):
     prefix = "Previewer:"
     if not cmd.startswith(prefix):
         return handled
-    search = cmd[len(prefix):]
+    search = cmd[len(prefix) :]
     cids = mw.col.find_cards(search)
     cards = [mw.col.getCard(cid) for cid in cids]
     if len(cards) == 0:
         return
-    elif len(cards) == 1:
-        card = cards[0]
-        previewer = PreviewerSingleCard(card, context, mw)
-    else:
-        previewer = PreviewerListCards(cards, context, mw)
-    previewer._openPreview()
+    previewer = CardPreviewer(mw, cards)
+    previewer.open()
+
     return (True, None)
 
 
