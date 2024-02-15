@@ -13,7 +13,8 @@ addon_path = os.path.dirname(__file__)
 
 
 def create_link(editor):
-    dialog = QDialog(editor.parentWindow, Qt.Dialog)
+    dialog = QDialog(editor.parentWindow)
+    dialog.setWindowFlags(Qt.WindowType.Dialog)
     form = link.Ui_Dialog()
     form.setupUi(dialog)
 
@@ -89,7 +90,7 @@ def create_link(editor):
 
 def setupEditorButtonsFilter(buttons, editor):
     shortcut = getUserOption("Shortcut", "Ctrl+Shift+L")
-    in_tip = QKeySequence(shortcut).toString(QKeySequence.NativeText)
+    in_tip = QKeySequence(shortcut).toString()
     buttons.append(
         editor.addButton(
             os.path.join(addon_path, "icons", "link.svg"),
